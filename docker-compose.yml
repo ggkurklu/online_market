@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: ${DB_CONTAINER_NAME}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes: 
+      - mysql_data:/var/lib/mysql
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+
+  adminer:
+    image: adminer
+    container_name: ${ADMIN_CONTAINER_NAME}
+    ports:
+      - "8080:8080"
+    restart: always
+
+  python_app:
+    build:
+      context: .
+    container_name: ${PYTHON_CONTAINER_NAME}
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app 
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
